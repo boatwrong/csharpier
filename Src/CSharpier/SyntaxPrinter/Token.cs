@@ -226,14 +226,16 @@ internal static class Token
             {
                 var triviaText = trivia.ToString();
 
+                // Mimics the above formatting for #regions for preprocessor
+                // directives. 
+                docs.Add(Doc.HardLineIfNoPreviousLine);
+                docs.Add(Doc.Trim);
                 docs.Add(
-                    // adding two of these to ensure we get a new line when a directive follows a trailing comment
-                    Doc.HardLineIfNoPreviousLineSkipBreakIfFirstInGroup,
-                    Doc.HardLineIfNoPreviousLineSkipBreakIfFirstInGroup,
-                    Doc.Trim,
-                    Doc.Directive(triviaText),
-                    Doc.HardLineSkipBreakIfFirstInGroup
+                    kind == SyntaxKind.EndIfDirectiveTrivia
+                        ? Doc.EndRegion(triviaText)
+                        : Doc.BeginRegion(triviaText)
                 );
+                docs.Add(Doc.HardLine);
 
                 // keep one line after an #endif if there is at least one
                 if (kind is SyntaxKind.EndIfDirectiveTrivia)
