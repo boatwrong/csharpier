@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.Diagnostics;
 using System.IO.Abstractions;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -110,6 +109,8 @@ public class Program
         string? fileName = null;
 
         var exitCode = 0;
+
+        // TODO warm file somewhere around here
 
         while (true)
         {

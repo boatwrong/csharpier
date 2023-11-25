@@ -1,4 +1,315 @@
-﻿# 0.25.0
+﻿# 0.26.3
+## What's Changed
+#### C#12 Collection expressions are prefixed with two spaces [#1009](https://github.com/belav/csharpier/issues/1009)
+```c#
+// 0.26.0
+List<int> ids =  [];
+
+// 0.26.3
+List<int> ids = [];
+```
+
+Thanks go to @Jackenmen for reporting the problem.
+#### CSharpier inserts extra spaces around the contents of collection expressions [#1002](https://github.com/belav/csharpier/issues/1002)
+```c#
+// 0.26.0
+List<int> ids = [ ];
+List<int> ids = [ 1, 2, 3 ];
+
+// 0.26.3
+List<int> ids = [];
+List<int> ids = [1, 2, 3];
+```
+
+Thanks go to @golavr for reporting the problem.
+#### Configuration files not respected for stdin [#1028](https://github.com/belav/csharpier/issues/1028)
+When piping a file to csharpier via stdin, CSharpier uses the working directory to locate any configuration files. This was broken with `0.26.0`.
+
+Thanks go to @kikniknik for reporting the problem.
+
+#### Modify CSharpier.MSBuild to use NETCoreSdkVersion to detect which sdk to use for running CSharpier [#1022](https://github.com/belav/csharpier/issues/1022) [#1027](https://github.com/belav/csharpier/issues/1027)
+Previously CSharpier.MSBuild was using `targetFramework` to determine which version of CSharpier to run. This was problematic when there were multiple target frameworks, or the project was targeting a superset such as `net8.0-windows`
+
+It now makes use of `NETCoreSdkVersion` to determine which version of CSharpier to run.
+
+Thanks go to @Tyrrrz for the suggestion and to @Cjewett for the contribution to make it work
+#### CSharpierIgnore not respected when recursively finding .editorconfig
+When looking for `.editorconfig` files, CSharpier looks for them recursively in the current directory. This logic was not taking into account any files or directories ignored by a `.csharpierignore`.
+
+Thanks go to @sebastieng84 for the contribution.
+#### Optimize editorconfig lookups when piping files [#1039](https://github.com/belav/csharpier/pull/1039)
+CSharpier now only looks for an `.editorconfig` for the file being piped to CSharpier. Under normal usage it recursively looks for all possible `.editorconfig` files for the given directory. 
+
+**Full Changelog**: https://github.com/belav/csharpier/compare/0.26.2...0.26.3
+# 0.26.2
+## What's Changed
+#### CSharpier.MsBuild does not support DotNet 8 [#1012](https://github.com/belav/csharpier/issues/1012)
+When using CSharpier.MsBuild in a setting where the project targeted net8.0 and only the net8 sdk was installed, CSharpier.MsBuild would attempt to run the net7.0 version of csharpier which failed.
+
+Thanks go to @aditnryn for the fix
+#### Global System using directives should be sorted first [#1003](https://github.com/belav/csharpier/issues/1003)
+Global using were not sorting `System` to the top, which was inconsistent with regular using.
+
+```c#
+// 0.26.1
+global using ZWord;
+global using AWord;
+global using System.Web;
+global using System;
+
+// 0.26.2
+global using System;
+global using System.Web;
+global using AWord;
+global using ZWord;
+```
+
+Thanks go to @vipentti for the fix
+
+**Full Changelog**: https://github.com/belav/csharpier/compare/0.26.1...0.26.2
+# 0.26.1
+## What's Changed
+#### Editorconfig with duplicated sections was freezing IDE's [#989](https://github.com/belav/csharpier/issues/989)
+CSharpier was unable to parse an `.editorconfig` file that contained duplicate sections and would crash. This would result in a hung IDE.
+```
+[*]
+insert_final_newline = true
+
+[*]
+spelling_languages = en-us
+```
+
+Thanks go to @echoix for helping track this down.
+
+#### A .csharpierrc file anywhere above a file now takes priority over any .editorconfig [#987](https://github.com/belav/csharpier/issues/987)
+Given the following setup
+```
+/src/.editorconfig
+/src/ProjectName/.editorconfig
+/src/.csharpierrc
+```
+
+Originally with 0.26.0, the `/src/ProjectName/.editorconfig` file would be used for determining the configuration options for a file within `src/ProjectName`. This resulted in the existing options within `.csharpierrc` being ignored.
+
+With 0.26.1, if a `.csharpierrc` exists anywhere above a given file, it will be used to determine the configuration options.
+
+Thanks go to @parched for reporting the issue.
+
+**Full Changelog**: https://github.com/belav/csharpier/compare/0.26.0...0.26.1
+# 0.26.0
+## What's Changed
+#### EditorConfig Support
+CSharpier will now read configuration options from an `.editorconfig`. See https://csharpier.com/docs/Configuration for more details.
+
+#### Net8 Support
+CSharpier now supports the .net8 sdk. It still supports net6 and net7.
+
+#### Sorting of using directives [#661](https://github.com/belav/csharpier/issues/661)
+CSharpier now sorts using statements. It follows the following rules
+```c#
+global using System.Linq; // sort global first
+using System; // sort anything in System
+using NonSystem; // sort anything non-system
+using static Static; // sort static
+using Alias = Z; // sort alias
+using SomeAlias = A;
+#if DEBUG // finally any usings in #if's
+using Z; // contents are not sorted as of now
+using A;
+#endif
+```
+#### Remove line before the content of a bracketless if/else statement [#979](https://github.com/belav/csharpier/issues/979)
+```c#
+// input
+if (true)
+
+    CallMethod();
+else if (false)
+
+    CallMethod();
+else
+
+    CallMethod();
+
+for (; ; )
+
+    CallMethod();
+
+while (true)
+
+    CallMethod();
+
+// 0.26.0
+if (true)
+    CallMethod();
+else if (false)
+    CallMethod();
+else
+    CallMethod();
+
+for (; ; )
+    CallMethod();
+
+while (true)
+    CallMethod();
+```
+
+Thanks go to @Infinite-3D for reporting
+#### Support C# 12 primary constructors on structs [#969](https://github.com/belav/csharpier/issues/969)
+CSharpier now supports primary constructors on structs
+```c#
+public struct NamedItem2(
+    string name1,
+    string name2
+)
+{
+    public string Name1 => name1;
+    public string Name2 => name1;
+}
+```
+#### Support C# 12 collection expressions [#964](https://github.com/belav/csharpier/issues/964
+CSharpier now supports collection expressions
+```c#
+int[] a =  [ 1, 2, 3, 4, 5, 6, 7, 8 ];
+
+Span<int> b =  [ 'a', 'b', 'c', 'd', 'e', 'f', 'h', 'i' ];
+
+string[] c =
+[
+    "________________________",
+    "________________________",
+    "________________________",
+    "________________________"
+];
+
+int[][] d =
+[
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+```
+
+Thanks go to @meenzen for reporting
+#### MSBuild - when a file fails to compile csharpier interferes with getting you clickable links to the compilation errors. [#957](https://github.com/belav/csharpier/issues/957)
+Build errors will now display properly when using CSharpier.MSBuild
+#### Format element access properly in long invocation chains [#956](https://github.com/belav/csharpier/issues/956)
+```c#
+// 0.25.0
+var x = someLongNameField.CallMethod____________________________________().AccessArray[
+    1
+].Property_______________;
+
+// 0.26.0
+var x = someLongNameField
+    .CallMethod____________________________________()
+    .AccessArray[1]
+    .Property_______________;
+```
+#### Improvements to visible whitespace in console output. [#953](https://github.com/belav/csharpier/issues/953)
+When using `cshapier --check` whitespace is now only visible in the following situations
+
+When an otherwise empty line contains whitespace
+```
+----------------------------- Expected: Around Line 4 -----------------------------
+    private string field1;
+
+    private string field2;
+----------------------------- Actual: Around Line 4 -----------------------------
+    private string field1;
+····
+    private string field2;
+```
+
+When a line has extra trailing whitespace
+```
+----------------------------- Expected: Around Line 3 -----------------------------
+{
+    private string field1;
+}
+----------------------------- Actual: Around Line 3 -----------------------------
+{
+    private string field1;····
+}
+```
+#### MSBuild is not encoding using UTF8 [#947](https://github.com/belav/csharpier/issues/947)
+When CSharpier.MSBuild ran into a failed csharpier check, it was not encoding the std-error output with UTF8. This resulted in messages such as
+```
+----------------------------- Expected: Around Line 3 -----------------------------
+{
+┬╖┬╖┬╖┬╖private┬╖string┬╖field1;
+}
+----------------------------- Actual: Around Line 3 -----------------------------
+{
+┬╖┬╖┬╖┬╖private┬╖string┬╖field1;┬╖┬╖┬╖┬╖
+}
+```
+Thanks go to @Tyrrrz for reporting
+#### Comment inside raw string literal is lost when file is formatted. [#937](https://github.com/belav/csharpier/issues/937)
+```c#
+// input
+var rawLiteralWithExpressionThatWeDontFormat = new StringContent(
+    // this comment shouldn't go away
+    $$"""
+      {
+          "params": "{{searchFilter switch
+{
+    SearchFilter.Video => "EgIQAQ%3D%3D",
+    _ => null
+}}}"
+      }
+      """
+);
+
+// 0.25.0
+var rawLiteralWithExpressionThatWeDontFormat = new StringContent(
+    $$"""
+      {
+          "params": "{{searchFilter switch
+{
+    SearchFilter.Video => "EgIQAQ%3D%3D",
+    _ => null
+}}}"
+      }
+      """
+);
+```
+
+Thanks go to @Tyrrrz for reporting
+#### Allow line endings to be configurable [#935](https://github.com/belav/csharpier/issues/935)
+CSharpier now supports the following options for line endings. The default is `auto`
+- "auto" - Maintain existing line endings (mixed values within one file are normalised by looking at what's used after the first line)
+- "lf" – Line Feed only (\n), common on Linux and macOS as well as inside git repos
+- "crlf" - Carriage Return + Line Feed characters (\r\n), common on Windows
+
+Thanks go to @phuhl for the feature request
+#### Avoid breaking only around binary expression but not binary expression itself [#924](https://github.com/belav/csharpier/issues/924)
+```c#
+// 0.25.0
+if (
+    someLongStatement == true || someOtherStatement________________________________ == false
+)
+
+// 0.26.0
+if (someLongStatement == true || someOtherStatement________________________________ == false)
+```
+
+Thanks go to @Nixxen for reporting
+#### Nested loops without brackets should not be indented [#867](https://github.com/belav/csharpier/issues/867)
+```c#
+// 0.25.0
+foreach (var subsequence in sequence)
+    foreach (var item in subsequence)
+        item.DoSomething();
+
+// 0.26.0
+foreach (var subsequence in sequence)
+foreach (var item in subsequence)
+    item.DoSomething();
+```
+Thanks go to @Rudomitori for the contribution
+**Full Changelog**: https://github.com/belav/csharpier/compare/0.25.0...0.26.0
+# 0.25.0
 ## Breaking Changes
 #### Improve if directive formatting [#404](https://github.com/belav/csharpier/issues/404)
 The `preprocessorSymbolSets` configuration option is no longer supported. 
@@ -1224,4 +1535,8 @@ Thanks go to @pingzing
 - Implement Formatting Options with Configuration File [#10](https://github.com/belav/csharpier/issues/10)
 
 **Full Changelog**: https://github.com/belav/csharpier/compare/0.9.0...0.9.1
+
+
+
+
 

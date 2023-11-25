@@ -7,8 +7,9 @@ CSharpier has support for a configuration file. You can use any of the following
 - A ```.csharpierrc.json``` or ```.csharpierrc.yaml``` file.
 - A ```.editorconfig``` file. See EditorConfig section below.
 
-The configuration file will be resolved starting from the location of the file being formatted, and searching up the file tree until a config file is (or isn’t) found.
-
+The configuration file will be resolved based on the location of the file being formatted.
+- If a `.csharpierrc` file exists somewhere at or above the given file, that will be used.
+- Otherwise if an `.editorconfig` file exists somewhere at or above the given file, that will be used. Respecting editorconfig inheritance.
 ### Configuration Options
 JSON
 ```json
@@ -80,7 +81,7 @@ The long term plan is to improve Csharpier's ability to determine the symbol set
 
 ### EditorConfig
 
-CSharpier supports configuration via an `.editorconfig` file. A `.csahrpierrc*` file in the same directory will take priority.
+CSharpier supports configuration via an `.editorconfig` file. A `.csharpierrc*` file in the same directory will take priority.
 
 ```ini
 [*]

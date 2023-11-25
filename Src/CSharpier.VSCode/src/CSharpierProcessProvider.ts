@@ -145,8 +145,10 @@ export class CSharpierProcessProvider implements Disposable {
                 .toString()
                 .trim();
 
-            this.logger.debug(`dotnet csharpier --version output ${outputFromCsharpier}`);
-            return outputFromCsharpier;
+            this.logger.debug(`dotnet csharpier --version output: ${outputFromCsharpier}`);
+            const versionWithoutHash = outputFromCsharpier.split("+")[0]
+            this.logger.debug(`Using ${versionWithoutHash} as the version number.`)
+            return versionWithoutHash;
         } catch (error: any) {
             const message = !error.stderr ? error.toString() : error.stderr.toString();
 
@@ -209,7 +211,12 @@ export class CSharpierProcessProvider implements Disposable {
                 return NullCSharpierProcess.instance;
             }
 
-            this.customPathInstaller.ensureVersionInstalled(version);
+            if (!this.customPathInstaller.ensureVersionInstalled(version)) {
+                this.logger.debug(`Unable to validate install of version ${version}`)
+                this.displayFailureMessage();
+                return NullCSharpierProcess.instance;
+            }
+
             const customPath = this.customPathInstaller.getPathForVersion(version);
 
             this.logger.debug(`Adding new version ${version} process for ${directory}`);
@@ -223,7 +230,12 @@ export class CSharpierProcessProvider implements Disposable {
                 }
                 return new CSharpierProcessSingleFile(this.logger, customPath);
             } else {
-                return new CSharpierProcessPipeMultipleFiles(this.logger, customPath, directory);
+                const csharpierProcess = new CSharpierProcessPipeMultipleFiles(this.logger, customPath, directory);
+                if (csharpierProcess.processFailedToStart) {
+                    this.displayFailureMessage();
+                }
+
+                return csharpierProcess;
             }
         } catch (ex: any) {
             this.logger.error(ex.output.toString());
@@ -247,4 +259,10 @@ export class CSharpierProcessProvider implements Disposable {
         this.csharpierVersionByDirectory = {};
         this.csharpierProcessesByVersion = {};
     };
+
+    private displayFailureMessage() {
+        window.showErrorMessage(
+            "CSharpier could not be set up properly so formatting is not currently supported. See Output - CSharpier for details.",
+        );
+    }
 }

@@ -1,5 +1,4 @@
 using System.IO.Abstractions;
-using Microsoft.Extensions.Logging;
 
 namespace CSharpier.Cli;
 
@@ -86,10 +85,9 @@ public class IgnoreFile
         var directoryInfo = fileSystem.DirectoryInfo.FromDirectoryName(baseDirectoryPath);
         while (directoryInfo != null)
         {
-            var ignoreFilePath = fileSystem.Path.Combine(
-                directoryInfo.FullName,
-                ".csharpierignore"
-            );
+            var ignoreFilePath = fileSystem
+                .Path
+                .Combine(directoryInfo.FullName, ".csharpierignore");
             if (fileSystem.File.Exists(ignoreFilePath))
             {
                 return ignoreFilePath;

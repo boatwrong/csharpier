@@ -1,4 +1,4 @@
-function CSH-Release {
+function CSH-CreateRelease {
     param (
         [Parameter(Mandatory=$true)]
         [string]$versionNumber
@@ -6,6 +6,10 @@ function CSH-Release {
 
     $previousVersionNumber
 
+    git checkout main
+    git pull
+    git checkout -b "release-$versionNumber"
+    
     $versionPropsPath = $PSScriptRoot + "/../Nuget/Build.props"
     $versionProps = [xml](Get-Content $versionPropsPath)
 
@@ -13,9 +17,6 @@ function CSH-Release {
     $versionProps.Project.PropertyGroup.Version = $versionNumber
     $versionProps.Save($versionPropsPath)
 
-    # checkout main
-    # pull
-    # create branch
     $changeLog = CSH-ChangeLog $previousVersionNumber $versionNumber
 
     $changeLogPath = ($PSScriptRoot + "/../CHANGELOG.md")

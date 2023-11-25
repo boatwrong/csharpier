@@ -2,12 +2,20 @@ using System.IO.Abstractions;
 
 namespace CSharpier.Cli.EditorConfig;
 
+// TODO for a given directory find the config in it and going up til root
+// keep track of directories + their corresponding configs
+// if searching a new directory and we go up to a parent that contains the first config, use that
+// how many directories would we run into? enough to matter?
 internal static class EditorConfigParser
 {
     /// <summary>Finds all configs above the given directory as well as within the subtree of this directory</summary>
     public static List<EditorConfigSections> FindForDirectoryName(
         string directoryName,
-        IFileSystem fileSystem
+        IFileSystem fileSystem,
+        // not the best name, but I plan on rewriting this to not find all of the configs up front
+        // which will remove this parameter
+        bool limitEditorConfigSearch,
+        IgnoreFile ignoreFile
     )
     {
         if (directoryName is "")
@@ -17,7 +25,13 @@ internal static class EditorConfigParser
 
         var directoryInfo = fileSystem.DirectoryInfo.FromDirectoryName(directoryName);
         var editorConfigFiles = directoryInfo
-            .EnumerateFiles(".editorconfig", SearchOption.AllDirectories)
+            .EnumerateFiles(
+                ".editorconfig",
+                limitEditorConfigSearch
+                    ? SearchOption.TopDirectoryOnly
+                    : SearchOption.AllDirectories
+            )
+            .Where(x => !ignoreFile.IsIgnored(x.FullName))
             .ToList();
 
         // already found any in this directory above
@@ -25,9 +39,9 @@ internal static class EditorConfigParser
 
         while (directoryInfo is not null)
         {
-            var file = fileSystem.FileInfo.FromFileName(
-                fileSystem.Path.Combine(directoryInfo.FullName, ".editorconfig")
-            );
+            var file = fileSystem
+                .FileInfo
+                .FromFileName(fileSystem.Path.Combine(directoryInfo.FullName, ".editorconfig"));
             if (file.Exists)
             {
                 editorConfigFiles.Add(file);
